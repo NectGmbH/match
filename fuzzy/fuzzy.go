@@ -65,9 +65,9 @@ func (m *MatcherType) LowLengthAction(action bool) *MatcherType {
 	return m
 }
 
-// CaseSensitive defines the matcher to be case sensitive
+// MaxAbsoluteDistance defines the maximum distance allowed for two elements to be considered a match
 func (m *MatcherType) MaxAbsoluteDistance(maxDistance float64) *MatcherType {
-	m.isCaseSensitive = true
+	m.maxWeightedDistance = maxDistance
 
 	return m
 }
@@ -99,7 +99,7 @@ func (m *MatcherType) MatchString(reference, toMatch string) bool {
 		}
 
 		// Case insensitive matching requested
-		return strings.ToLower(reference) == strings.ToLower(toMatch)
+		return strings.EqualFold(reference, toMatch)
 	}
 
 	return false
@@ -116,13 +116,13 @@ func (m *MatcherType) Match(reference, toMatch interface{}) (bool, error) {
 	// Assert a satisfies the fmt.Stringer interface
 	aStringer, isStringer := reference.(fmt.Stringer)
 	if !isStringer {
-		return false, fmt.Errorf("Reference (%v) does not satisfy fmt.Stringer interface", reference)
+		return false, fmt.Errorf("reference (%v) does not satisfy fmt.Stringer interface", reference)
 	}
 
 	// Assert b satisfies the fmt.Stringer interface
 	bStringer, isStringer := toMatch.(fmt.Stringer)
 	if !isStringer {
-		return false, fmt.Errorf("Data to match (%v) does not satisfy fmt.Stringer interface", toMatch)
+		return false, fmt.Errorf("rata to match (%v) does not satisfy fmt.Stringer interface", toMatch)
 	}
 
 	return m.MatchString(aStringer.String(), bStringer.String()), nil
