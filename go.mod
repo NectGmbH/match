@@ -1,3 +1,3 @@
-module github.com/NectGmbH/fuzzy
+module github.com/NectGmbH/match
 
-go 1.14
+go 1.15
