@@ -3,25 +3,21 @@ package fuzzy
 import (
 	"fmt"
 	"strings"
+
+	"github.com/NectGmbH/match/fuzzy/dist"
 )
 
 const (
-	defaultMinLength = 2
-
-	defaultWeightInsert  = 1.
-	defaultWeightReplace = 1.
-	defaultWeightAdd     = 1.
+	defaultMinLength      = 2
+	defaultMaxRelDistance = 0.2
 )
 
 // MatcherType denotes a fuzzy matcher instance
 type MatcherType struct {
-	weightInsert  float64
-	weightReplace float64
-	weightAdd     float64
-
-	minLength           int
-	lowLengthAction     bool
-	maxWeightedDistance float64
+	distFn          dist.Fn
+	minLength       int
+	lowLengthAction bool
+	maxRelDistance  float64
 
 	isCaseSensitive bool
 	isExact         bool
@@ -30,10 +26,9 @@ type MatcherType struct {
 // Matcher instantiates a new Matcher
 func Matcher() *MatcherType {
 	return &MatcherType{
-		minLength:     defaultMinLength,
-		weightInsert:  defaultWeightInsert,
-		weightReplace: defaultWeightReplace,
-		weightAdd:     defaultWeightAdd,
+		minLength:      defaultMinLength,
+		maxRelDistance: defaultMaxRelDistance,
+		distFn:         dist.NewWagnerFischer().GenerateFn(),
 	}
 }
 
@@ -65,18 +60,9 @@ func (m *MatcherType) LowLengthAction(action bool) *MatcherType {
 	return m
 }
 
-// MaxAbsoluteDistance defines the maximum distance allowed for two elements to be considered a match
-func (m *MatcherType) MaxAbsoluteDistance(maxDistance float64) *MatcherType {
-	m.maxWeightedDistance = maxDistance
-
-	return m
-}
-
-// Weights sets the weights / penalties for the Levenshtein distance calculation
-func (m *MatcherType) Weights(weightInsert, weightReplace, weightAdd float64) *MatcherType {
-	m.weightInsert = weightInsert
-	m.weightReplace = weightReplace
-	m.weightAdd = weightAdd
+// MaxRelativeDistance defines the maximum relative distance allowed for two elements to be considered a match
+func (m *MatcherType) MaxRelativeDistance(maxDistance float64) *MatcherType {
+	m.maxRelDistance = maxDistance
 
 	return m
 }
@@ -100,6 +86,17 @@ func (m *MatcherType) MatchString(reference, toMatch string) bool {
 
 		// Case insensitive matching requested
 		return strings.EqualFold(reference, toMatch)
+	}
+
+	var distance float64
+	if m.isCaseSensitive {
+		distance = m.distFn(reference, toMatch)
+	} else {
+		distance = m.distFn(strings.ToLower(reference), strings.ToLower(toMatch))
+	}
+
+	if distance/float64(len(reference)) <= m.maxRelDistance {
+		return true
 	}
 
 	return false
