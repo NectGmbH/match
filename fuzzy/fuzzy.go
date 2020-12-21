@@ -67,6 +67,13 @@ func (m *MatcherType) MaxRelativeDistance(maxDistance float64) *MatcherType {
 	return m
 }
 
+// DistanceFn sets the distance metric function (see sub-package 'dist')
+func (m *MatcherType) DistanceFn(fn dist.Fn) *MatcherType {
+	m.distFn = fn
+
+	return m
+}
+
 // MatchString performs a matching of two strings
 func (m *MatcherType) MatchString(reference, toMatch string) bool {
 
