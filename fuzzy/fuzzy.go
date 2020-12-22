@@ -20,8 +20,8 @@ type MatcherType struct {
 	normalizeFnsToMatch   []normalize.Fn
 
 	minLength       int
-	lowLengthAction bool
 	maxRelDistance  float64
+	lowLengthAction bool
 
 	isCaseSensitive bool
 	isExact         bool
