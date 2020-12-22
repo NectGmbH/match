@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/NectGmbH/match/fuzzy/dist"
+	"github.com/NectGmbH/match/normalize"
 )
 
 const (
@@ -14,21 +15,27 @@ const (
 
 // MatcherType denotes a fuzzy matcher instance
 type MatcherType struct {
-	distFn          dist.Fn
+	distFn       dist.Fn
+	normalizeFns []normalize.Fn
+
 	minLength       int
 	lowLengthAction bool
 	maxRelDistance  float64
 
 	isCaseSensitive bool
 	isExact         bool
+
+	doNormalizeReference bool
+	doNormalizeToMatch   bool
 }
 
 // Matcher instantiates a new Matcher
 func Matcher() *MatcherType {
 	return &MatcherType{
-		minLength:      defaultMinLength,
-		maxRelDistance: defaultMaxRelDistance,
-		distFn:         dist.NewWagnerFischer().GenerateFn(),
+		minLength:          defaultMinLength,
+		maxRelDistance:     defaultMaxRelDistance,
+		doNormalizeToMatch: true,
+		distFn:             dist.NewWagnerFischer().GenerateFn(),
 	}
 }
 
@@ -74,6 +81,14 @@ func (m *MatcherType) DistanceFn(fn dist.Fn) *MatcherType {
 	return m
 }
 
+// NormalizeFns sets (optional) normalization function(s) to be applied prior to matching. The
+// functions are executed in order
+func (m *MatcherType) NormalizeFns(fns ...normalize.Fn) *MatcherType {
+	m.normalizeFns = fns
+
+	return m
+}
+
 // MatchString performs a matching of two strings
 func (m *MatcherType) MatchString(reference, toMatch string) bool {
 
@@ -81,6 +96,18 @@ func (m *MatcherType) MatchString(reference, toMatch string) bool {
 	// return the defined result
 	if len(reference) < m.minLength || len(toMatch) < m.minLength {
 		return m.lowLengthAction
+	}
+
+	// Execute potential normalization functions on the string to be matched
+	if m.doNormalizeReference {
+		for _, fn := range m.normalizeFns {
+			reference = fn(reference)
+		}
+	}
+	if m.doNormalizeToMatch {
+		for _, fn := range m.normalizeFns {
+			toMatch = fn(toMatch)
+		}
 	}
 
 	// Exact matching requested
