@@ -24,7 +24,7 @@ func TestSimple(t *testing.T) {
 		}
 	})
 	t.Run("ICAO", func(t *testing.T) {
-		if !Matcher().CaseSensitive().Exact().NormalizeFns(
+		if !Matcher().CaseSensitive().Exact().Normalize(
 			func(s string) string {
 				return strings.ToUpper(s)
 			},
